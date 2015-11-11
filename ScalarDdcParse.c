@@ -14,6 +14,7 @@
 #include "ScalarDdcParse.h"
 #include "UartExecutor.h"
 #include "PowerStateExecutor.h"
+#include "ScalarPolicy.h"
 
 #include "env_resolve.h"
 
@@ -140,11 +141,7 @@ static unsigned char TPVComm_AckMsgVerify(unsigned char *cBuff){
 static int  Send_Ack1Ack2(char len, char cmd_type, char cmd_data1,char cmd_data2, char value, char is_sptby_TV){
 	char ack_buffer[7] = {0};
 	char tmp_len = len;
-/*
-	if(tmp_len < 3){
-		tmp_len = 3;
-	}
-*/
+
 	if(IS_SUPPORT_BY_TV_SET == is_sptby_TV){
 		TPVComm_TwoAckByteOkMsgGet(ack_buffer);
 	}else if(NOT_SUPPORT_BY_TV_SET == is_sptby_TV){
@@ -157,23 +154,8 @@ static int  Send_Ack1Ack2(char len, char cmd_type, char cmd_data1,char cmd_data2
 		ack_buffer[5] = 0x01;
 		ack_buffer[6] = value;
 	}
-/*
-	switch(tmp_len){
-		case 3:
-			ack_buffer[2] = 0;
-		break;
 
-		case 4:
-			ack_buffer[2] = 1;
-			ack_buffer[3] = value;
-		break;
-
-		default:
-			ack_buffer[2] = 0;
-		break;
-	}
-*/
-	printk("send ack\n");
+	printk("szy send ack\n");
 	return g_UartExecutor.Write_ScalarTTyLocked(ack_buffer,(int)tmp_len,NULL);
 }
 
@@ -190,7 +172,7 @@ static void poweroff_timerfunc(unsigned long data){
 void VirtualKeyClick(struct input_polled_dev *dev) {
     input_report_key(dev->input,KEY_POWER, 1);	
 	input_sync (dev->input);
-	printk("scalar report pwer key\n");
+	printk("szy scalar report pwer key\n");
 	//Analog Release
 	input_report_key(dev->input,KEY_POWER, 0);	
 	input_sync (dev->input);
@@ -215,7 +197,7 @@ void VirtualMenuKeyClick(struct input_polled_dev *dev, unsigned char scaler_key)
 
 	input_report_key(dev->input, key, 1);	
 	input_sync (dev->input);
-	printk("scalar report menu key=%d\n",key);
+	printk("szy scalar report menu key=%d\n",key);
 	//Analog Release
 	input_report_key(dev->input, key, 0);	
 	input_sync (dev->input);
@@ -223,7 +205,7 @@ void VirtualMenuKeyClick(struct input_polled_dev *dev, unsigned char scaler_key)
 
 void Report_PowerState2Android(struct input_polled_dev *dev,char power_state){
 	char pwr_stat = power_state;
-	printk("scalar power_state = %x\n",pwr_stat);
+	printk("szy scalar power_state = %x\n",pwr_stat);
 	switch(pwr_stat){
 		case NORM_SHUTDOWN:
 		case FORCE_SHUTDOWN:	
@@ -236,9 +218,6 @@ void Report_PowerState2Android(struct input_polled_dev *dev,char power_state){
 		break;
 
 		case RESET_SLEEP_TIMER:
-			//echo on > /sys/power/state
-			//ret = g_PowerStateExecutor.Set_Screen_State(_ON_STATE);
-			//R_state = POWER_ON_READY;
 
 		break;
 
@@ -262,7 +241,7 @@ void Parse_Specific_Command(struct input_polled_dev *dev, ptr_DDC_Command *comma
 					//"S2A: Scaler To AndroidS_State:0x03= wakeup android via scaler local keypad 
 					//(turn on backlight)0x81= shutdown0x82= suspend"
 
-					printk("Scaler To AndroidS_State=%x,R_state=%x\n",command_buf->CMD_Data2,R_state);
+					printk("szy Scaler To AndroidS_State=%x,R_state=%x\n",command_buf->CMD_Data2,R_state);
 
 					switch(command_buf->CMD_Data2){
 					    case NORM_SHUTDOWN:
@@ -275,7 +254,7 @@ void Parse_Specific_Command(struct input_polled_dev *dev, ptr_DDC_Command *comma
 						        mPowerOffMode = NORM_SHUTDOWN; //change poweroff mode to force
 						        Report_PowerState2Android(dev,NORM_SHUTDOWN);
 					        }
-		                break;
+		                	break;
 										
 			            case SUSPEND:
 				        //Current this command is not use.
@@ -313,20 +292,20 @@ void Parse_Specific_Command(struct input_polled_dev *dev, ptr_DDC_Command *comma
 				        break;
 
 			            default:
-			            break;
-		            }	
+			            	break;
+		           		 }	
 								
-	            }else if(UART_READ == command_buf->Pre1Byte)
-	            {
+	           		 }else if(UART_READ == command_buf->Pre1Byte)
+	            		{
 					//"R_State: ref. Android Feedback PM State command"
 					reAck_len = 7;
 					reAck_dat = R_state;
 
-					printk("Android Feedback PM State command = %x\n",reAck_dat);
+					printk("szy Android Feedback PM State command = %x\n",reAck_dat);
 				}
 			}else if(CMD_TYPE_0X82 == command_buf->CMD_Type)
 			{
-				printk("Reset Android Sleep Timer = %x\n",command_buf->CMD_Type);
+				printk("szy Reset Android Sleep Timer = %x\n",command_buf->CMD_Type);
 						
 				//Reset Android Sleep Timer
 				reAck_len = 6;
@@ -340,7 +319,7 @@ void Parse_Specific_Command(struct input_polled_dev *dev, ptr_DDC_Command *comma
 				//when leave android source, scaler notices android with a change-source command. 
 				//Then, android side should reset and stop its sleep timer, and lock android screen. 
 				//Therefore, this command is unnecessary.
-					printk("LEAVE_ANDROID_SRC Scaler Change Source Notification = %x,R_state = %x\n",command_buf->CMD_Data2,R_state);
+					printk("szy LEAVE_ANDROID_SRC Scaler Change Source Notification = %x,R_state = %x\n",command_buf->CMD_Data2,R_state);
 					
 					if((TURN_ON_BACKLIGHT == R_state) || (POWER_ON_READY == R_state)){
 						//if Android in normal mode, make android into suspend mode
@@ -348,7 +327,7 @@ void Parse_Specific_Command(struct input_polled_dev *dev, ptr_DDC_Command *comma
 						//printk(" LEAVE_ANDROID_SRC screen on is = %d bright =%d \n",screenon[0],screenon[1]);
 						if(screenon[0] ==1 )
 						{
-							printk(" LEAVE_ANDROID_SRC screen on is = %d bright =%d \n",screenon[0],screenon[1]);
+							printk("szy LEAVE_ANDROID_SRC screen on is = %d bright =%d \n",screenon[0],screenon[1]);
 							Report_PowerState2Android(dev,SUSPEND);
 							
 						}
@@ -356,7 +335,7 @@ void Parse_Specific_Command(struct input_polled_dev *dev, ptr_DDC_Command *comma
 
 				}else if(ENTER_ANDROID_SRC == command_buf->CMD_Data2){
 
-					printk("ENTER_ANDROID_SRC Scaler Change Source Notification = %x,R_state = %x\n",command_buf->CMD_Data2,R_state);
+					printk("szy ENTER_ANDROID_SRC Scaler Change Source Notification = %x,R_state = %x\n",command_buf->CMD_Data2,R_state);
 					
 					//Send factory command[6] to Android that resets sleep timer T3. 
 					/*if((BOOTING == R_state) || (POWER_ON_READY == R_state)){
@@ -375,7 +354,7 @@ void Parse_Specific_Command(struct input_polled_dev *dev, ptr_DDC_Command *comma
 						//{
 						if(screenon[0] ==0 )
 						{
-						printk("ENTER_ANDROID_SRC screen on is = %d bright =%d\n",screenon[0],screenon[1]);
+						printk("szy ENTER_ANDROID_SRC screen on is = %d bright =%d\n",screenon[0],screenon[1]);
 						  		Report_PowerState2Android(dev,TURN_ON_BACKLIGHT);
 						   		
 						}
@@ -394,7 +373,7 @@ void Parse_Specific_Command(struct input_polled_dev *dev, ptr_DDC_Command *comma
 			else if(CMD_TYPE_0X89 == command_buf->CMD_Type)
 			{
 				scaler_key = command_buf->CMD_Data2;
-				printk("%s scaler_key=%d\n", __func__, scaler_key);
+				printk("%s szy scaler_key=%d\n", __func__, scaler_key);
 				VirtualMenuKeyClick(dev, scaler_key);
 
 				reAck_len = 6;
@@ -462,7 +441,7 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 				continue;
 			}
 
-			printk("Check_sum OK!!\n");
+			printk("szy Check_sum OK!!\n");
 
 			//ddc_cmd_buf point to the data package
 			ddc_cmd_buf = (ptr_DDC_Command *)(ddc_buf+CurDatPtr);
@@ -479,11 +458,11 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 				//ack_buffer[0] = stch_i(ddc_buf[CurDatPtr]);
 				//ack_buffer[1] = stch_i(ddc_buf[CurDatPtr+1]);
 
-				printk("maybe Ack\n");
+				printk("szy maybe Ack\n");
 /****************************modify Ack packages analysis @haishan.lin 2013.05.03**************************/	
                           cRetVal = TPVComm_AckMsgVerify((ddc_buf+CurDatPtr));
 
-				printk("TPVComm_AckMsgVerify cRetVal=%d\n",cRetVal);
+				printk("szy TPVComm_AckMsgVerify cRetVal=%d\n",cRetVal);
 				if((unsigned char)eLink_OK == cRetVal){
 					CurDatPtr += 2;		//move the point to Pktlen
 					Command_type = *(ddc_buf+CurDatPtr);
@@ -514,7 +493,7 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 							case CMD_TYPE_0X85:
 								scalar_feedback_brightness = true;
 								set_brightness_count= 0;
-								printk("scalar feedback backlight level %d\n",Command_data2);
+								printk("szy scalar feedback backlight level %d\n",Command_data2);
 								break;
 							default:
 								break;
@@ -527,11 +506,11 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 								State = *(ddc_buf+CurDatPtr);
 								switch(State){
 									case NON_ANDROID_SRC:
-										printk("NON_ANDROID_SRC");
+										printk("szy NON_ANDROID_SRC");
 									break;
 									
 									case IN_ANDROID_SRC:
-										printk("IN_ANDROID_SRC");
+										printk("szy IN_ANDROID_SRC");
 									break;
 									
 									default:
@@ -540,7 +519,7 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 								break;
 								
 							case CMD_TYPE_0X82:
-								printk("USB hub on or off");
+								printk("szy USB hub on or off");
 								break;
 							case CMD_TYPE_0X83:
 								CurDatPtr += 1;
@@ -554,20 +533,20 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 
 					}else if(0x0e== Ack_data_len){
 						CurDatPtr += 1; //move the point to Ack data
-						printk("Maybe SN!\n");
+						printk("szy Maybe SN!\n");
 						getsn=false;
 						memcpy(_SerialNumBuf,ddc_buf+CurDatPtr,sizeof(_SerialNumBuf));
 						if(true)
 						{						
 							for(i=0;i<sizeof(_SerialNumBuf);i++)
 							{	
-								printk("serial number data[%d]= 0x%x \n",i,_SerialNumBuf[i]);
+								printk("szy serial number data[%d]= 0x%x \n",i,_SerialNumBuf[i]);
 							}
 						}
 						CurDatPtr += Ack_data_len;	//move the point to the next cmd						
 					}else if(0x06 == Ack_data_len){
 						CurDatPtr += 1; //move the point to Ack data
-						printk("Maybe Mac Address!\n");
+						printk("szy Maybe Mac Address!\n");
 						//_MacAddBuf = ddc_buf+CurDatPtr;
 						getethmac=false;
 						memcpy(_MacAddBuf,ddc_buf+CurDatPtr,sizeof(_MacAddBuf));
@@ -575,14 +554,14 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 						{
 							for(i=0;i<sizeof(_MacAddBuf);i++)
 							{	
-								printk("Mac Address data[%d]= 0x%x \n",i,_MacAddBuf[i]);
+								printk("szy Mac Address data[%d]= 0x%x \n",i,_MacAddBuf[i]);
 							}
 						}
 						CurDatPtr += Ack_data_len;	//move the point to the next cmd
 
 					}else if(0x05 == Ack_data_len){//robert
 						CurDatPtr += 1; //move the point to Ack data
-						printk("Get Scaler Version\n");
+						printk("szy Get Scaler Version\n");
 						get_scalerversion_flag=false;
 						get_scalerversion_count=0;
 						memcpy(_ScalerVerBuf,ddc_buf+CurDatPtr,sizeof(_ScalerVerBuf));
@@ -590,14 +569,14 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 						{
 							for(i=0;i<sizeof(_ScalerVerBuf);i++)
 							{	
-								printk("scaler version data[%d]= 0x%x \n",i,_ScalerVerBuf[i]);
+								printk("szy scaler version data[%d]= 0x%x \n",i,_ScalerVerBuf[i]);
 							}
 						}
 						CurDatPtr += Ack_data_len;	//move the point to the next cmd
 					}else if(0x08 <= Ack_data_len && get_model_name && !getsn){
 						temp=0;
 						get_model_name=false;
-						printk("Get Model Name\n");
+						printk("szy Get Model Name\n");
 						memcpy(_tempBuf,ddc_buf+CurDatPtr,sizeof(_tempBuf));
 						for(i=0;i<sizeof(_tempBuf);i++)
 						{
@@ -619,7 +598,7 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 						{
 							for(i=0;i<sizeof(_ModelNameBuf);i++)
 							{	
-								printk("Model name data[%d]= 0x%x \n",i,_ModelNameBuf[i]);
+								printk("szy Model name data[%d]= 0x%x \n",i,_ModelNameBuf[i]);
 							}
 						}
 						CurDatPtr += Ack_data_len;	//move the point to the next cmd
