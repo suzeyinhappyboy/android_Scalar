@@ -21,19 +21,19 @@
 #endif
 //bob+]
 
-
-
 #define KEYCODE_DPAD_RIGHT 		(22)
 #define INP_KEYCODE_INTERVAL	(200) 		/* key receive interval (ms)        */
-static int scalarpolicy_remove(struct platform_device *pdev);  //bob+
-static long ScalarPolicy_ioctl(struct file *fp, unsigned int cmd, unsigned long arg);
-static int ScalarPolicy_open(struct inode *, struct file *);
-static ssize_t ScalarPolicy_read(struct file *fp,  char __user *buf, size_t size, loff_t *ppos);
-static int ScalarPolicy_release(struct inode *, struct file *);
-static ssize_t ScalarPolicy_write(struct file *fp, const char __user *data, size_t len, loff_t *ppos);
-static int __devinit scalarpolicy_probe(struct platform_device *pdev);
 
-static unsigned char local_buf[256];          
+static unsigned char local_buf[256];    
+
+ static int scalarpolicy_remove(struct platform_device *pdev);  //bob+
+ static long ScalarPolicy_ioctl(struct file *fp, unsigned int cmd, unsigned long arg);
+ static int ScalarPolicy_open(struct inode *, struct file *);
+ static ssize_t ScalarPolicy_read(struct file *fp,  char __user *buf, size_t size, loff_t *ppos);
+ static int ScalarPolicy_release(struct inode *, struct file *);
+ static ssize_t ScalarPolicy_write(struct file *fp, const char __user *data, size_t len, loff_t *ppos);
+ static int __devinit scalarpolicy_probe(struct platform_device *pdev);
+
 
 static const struct file_operations scalarexector_fops = {
 	.owner = THIS_MODULE,
@@ -84,7 +84,7 @@ extern int get_scalerversion_count;
 static unsigned char old_R_state = BOOTING;
 //static unsigned char get_Mac_flag = 0; 
 static unsigned char resend_flag = 0;		//used to jude resend 
-static unsigned char retry_flag = 0;
+//static unsigned char retry_flag = 0;
 extern bool getethmac;
 extern bool getsn;
 extern unsigned char gLanguage;
@@ -158,69 +158,6 @@ static unsigned char keycode[62] = {
   [32]   = KEYCODE_DPAD_RIGHT,
 };
 
-/*
-//Get Wired Ethernet port MAC address
-unsigned char get_mac_add[] = {MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,UART_READ,
-						TPV_FACTORY_CODE,CMD_BYTE_0XF0,EXT_BYTE_0X01,0x01,0x00,0xB6};
-//Read EDID Serial Number   (direct mode) (Read Osd EDID Serial Number)
-unsigned char get_serial_num[] = {MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,UART_READ,
-						TPV_FACTORY_CODE,0xE8,0x0E,0x00,0x00,0xA0};
-*/
-
-/*
-unsigned char local_state_arr[] = {BOOTING,POWER_ON_READY,SHUTDOWN_IN,
-                        SHUTDOWN_COMPLETE,INTO_THE_SUSPEND_MODE,SUSPEND_COMPLETE,CANCEL_SHUTDOWN};
-
-//PktNbr 
-unsigned char ack_state_arr[] = {BOOTING_PKTNBR,POWER_ON_READY_PKTNBR,SHUTDOWN_IN_PKTNBR,SHUTDOWN_COMPLETE_PKTNBR,
-	                    INTO_THE_SUSPEND_MODE_PKTNBR,SUSPEND_COMPLETE_PKTNBR,CANCEL_SHUTDOWN_PKTNBR};
-
-unsigned char SetPktNbr(unsigned char r_state)
-{
-	unsigned char stat = 0x00;
-	char c;
-
-	for(c = 0; c < sizeof(local_state_arr); c ++){
-		if(r_state == local_state_arr[c]){
-            stat = ack_state_arr[c];
-			break;
-		}
-	}
-
-	return stat;
-}
-*/
-/*
-static irqreturn_t Scalar_key1_interrupt_handler(int irq, void *dev_id)
-{
-    if(gpio_get_value(TEGRA_GPIO_PX5)){
-        input_report_key(ScalarPolicy_dev->input,KEY_VOLUMEUP, 0);	
-        input_sync (ScalarPolicy_dev->input);
-        //printk("scalar report vol + up\n");
-    }else{
-        input_report_key(ScalarPolicy_dev->input,KEY_VOLUMEUP, 1);	
-        input_sync (ScalarPolicy_dev->input);
-        //printk("scalar report vol + down\n");
-    }
-
-	return IRQ_HANDLED;
-}
-
-static irqreturn_t Scalar_key2_interrupt_handler(int irq, void *dev_id)
-{
-    if(gpio_get_value(TEGRA_GPIO_PX4)){
-        input_report_key(ScalarPolicy_dev->input,KEY_VOLUMEDOWN, 0);	
-        input_sync (ScalarPolicy_dev->input);
-        //printk("scalar report vol - up\n");
-    }else{
-        input_report_key(ScalarPolicy_dev->input,KEY_VOLUMEDOWN, 1);	
-        input_sync (ScalarPolicy_dev->input);
-        //printk("scalar report vol - down\n");
-    }
-
-	return IRQ_HANDLED;
-}
-*/
 /*******************************************************************************
  **
  **
@@ -233,61 +170,31 @@ static void ScalarPolicy_poll(struct input_polled_dev *dev)
 	int len = MAX_PKT_LENGTH;
 	int rret,wret;
 	unsigned char c,check_sum;
+	unsigned char* fb_state = (unsigned char*)&AndroidCommand[Set_Backlight_Level];
+	unsigned char* brightness = (unsigned char*)&AndroidCommand[Android_Get_Backlight_Level];
+	unsigned char* Auto_Pwoff = (unsigned char*)&AndroidCommand[Auto_Poweroff];
 	
-	unsigned char fb_pm_stat[] = {MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,
-		        UART_WRITE,TPV_FACTORY_CODE,CMD_BYTE_0XDD,CMD_TYPE_0X81,0x01,R_state,0x00};
-	unsigned char boot_menu[] = {MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,
-				UART_WRITE,TPV_FACTORY_CODE,CMD_BYTE_0XDD,CMD_TYPE_0X81,0x01,BOOT_MENU,0x94};
-	unsigned char get_scalar_brightness[] = {MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,
-				UART_READ,TPV_FACTORY_CODE,CMD_BYTE_0XDD,CMD_TYPE_0X83,0x01,0x00,0x12};
-       unsigned char send_to_get_scalarver[]={MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,UART_READ,
-	   	TPV_FACTORY_CODE,CMD_BYTE_0XDD,0x86,0x01,0x00,0x16};	 
-	unsigned char auto_poweroff[] = {MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,
-		        	UART_WRITE,TPV_FACTORY_CODE,CMD_BYTE_0XDD,CMD_TYPE_0X87,0x01,POWEROFF_MINUTE,0x14};
-	unsigned char get_serial_num[] = {MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,UART_READ,
-                            TPV_FACTORY_CODE,CMD_BYTE_0XDD,0x84,0x01,0x00,0x15};
-	unsigned char send_to_get_modelname[]={MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,UART_READ,
-	TPV_FACTORY_CODE,CMD_BYTE_0XDD,0x87,0x01,0x00,0x16};
-	
+	AndroidCommand[Auto_Poweroff].CmdData2 = POWEROFF_MINUTE;
+	AndroidCommand[Android_Feedback_State].Checksum = 0x00;
 	size_ = (len <= sizeof(local_buf))? len : sizeof(local_buf);
 	memset(local_buf, 0 , sizeof(local_buf));
   	rret = g_UartExecutor.Read_ScalarTTyLocked (local_buf, len, NULL);
 	
-/*	if(rret > 0)
-	{
-		//printk ("ScalarPolicy_poll -- Read_ScalarTTyLocked = %d\n", rret);	
-		for(c = 0; c < rret; c ++){
-			printk("g_UartExecutor.Read_ScalarTTyLocked NO.=%d,Data=%x\n",c,local_buf[c]);
-		}		
-	}
-*/
-//
-/*
-	for(c = 0,check_sum = 0x00; c < (sizeof(fb_pm_stat)-1); c ++){
-		check_sum = check_sum^fb_pm_stat[c];	//xor
-	}
-	fb_pm_stat[c] = check_sum;
-	wret = g_UartExecutor.Write_ScalarTTyLocked(fb_pm_stat,sizeof(fb_pm_stat),NULL);
-	printk ("ScalarPolicy_poll -- Write_ScalarTTyLocked = %d\n", wret);
-*/
-	//wret = g_UartExecutor.Write_ScalarTTyLocked(fb_pm_stat,sizeof(fb_pm_stat),NULL);
-	
-
 //*  //Eric	
 	if(old_R_state != R_state){
 		
-		printk ("ScalarPolicy_poll -- old_R_state != R_state\n");
+		printk ("szy ScalarPolicy_poll -- old_R_state != R_state\n");
 		old_R_state = R_state; 
 		resend_flag = 0;
 
 		//set pkt_nbr
 		//fb_pm_stat[GEN_PKT_LENGTH] = SetPktNbr(R_state);
-
-		for(c = 0,check_sum = 0x00; c < (sizeof(fb_pm_stat)-1); c ++){
-			check_sum = check_sum^fb_pm_stat[c];	//xor
+		AndroidCommand[Android_Feedback_State].CmdData2 = R_state;
+		for(c = 0,check_sum = 0x00; c < (sizeof(AndroidCommand[Android_Feedback_State])-1); c ++){
+			check_sum = check_sum^(*(fb_state+c));	//xor
 		}
-		fb_pm_stat[c] = check_sum;
-		wret = g_UartExecutor.Write_ScalarTTyLocked(fb_pm_stat,sizeof(fb_pm_stat),NULL);
+		AndroidCommand[Android_Feedback_State].Checksum= check_sum;
+		wret = g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Android_Feedback_State],sizeof(AndroidCommand[Android_Feedback_State]),NULL);
 		if(CANCEL_SHUTDOWN == R_state){
 			R_state = POWER_ON_READY;
 		}
@@ -301,12 +208,13 @@ static void ScalarPolicy_poll(struct input_polled_dev *dev)
 //			fb_pm_stat[GEN_PKT_LENGTH] = SetPktNbr(old_R_state);
 		
 			//check sum
-			printk ("ScalarPolicy_poll -- scalar_feedback_state != old_R_state\n");
-			for(c = 0,check_sum = 0x00; c < (sizeof(fb_pm_stat)-1); c ++){
-				check_sum = check_sum^fb_pm_stat[c];	//xor
+			printk ("szy ScalarPolicy_poll -- scalar_feedback_state != old_R_state\n");
+			AndroidCommand[Android_Feedback_State].CmdData2 = R_state;
+			for(c = 0,check_sum = 0x00; c < (sizeof(AndroidCommand[Android_Feedback_State])-1); c ++){
+			check_sum = check_sum^(*(fb_state+c));	//xor
 			}
-			fb_pm_stat[c] = check_sum;
-			wret = g_UartExecutor.Write_ScalarTTyLocked(fb_pm_stat,sizeof(fb_pm_stat),NULL);
+			AndroidCommand[Android_Feedback_State].Checksum= check_sum;
+			wret = g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Android_Feedback_State],sizeof(AndroidCommand[Android_Feedback_State]),NULL);
 		}
 	}
 //*/
@@ -315,83 +223,45 @@ static void ScalarPolicy_poll(struct input_polled_dev *dev)
 	}
 
 	if(0 == recovery_mode){
-		g_UartExecutor.Write_ScalarTTyLocked(boot_menu,sizeof(boot_menu),NULL);
+		AndroidCommand[Android_Feedback_State].CmdData2 = BOOT_MENU;
+		AndroidCommand[Android_Feedback_State].Checksum = 0x94;
+		g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Android_Feedback_State],sizeof(AndroidCommand[Android_Feedback_State]),NULL);
 		recovery_mode++;
 	}
 	else if(getsn && !getethmac)
 	{
-		printk("send command for get_serial_num \n");
-		wret =g_UartExecutor.Write_ScalarTTyLocked(get_serial_num,sizeof(get_serial_num),NULL);  
+		printk("szy send command for get_serial_num \n");
+		wret =g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Read_EDID_Serial_Number],sizeof(AndroidCommand[Read_EDID_Serial_Number]),NULL);  
 	}
 	else if(get_model_name && !getsn)
 	{
-		printk("send command for get modelname \n");
-		wret = g_UartExecutor.Write_ScalarTTyLocked(send_to_get_modelname,sizeof(send_to_get_modelname),NULL);
+		printk("szy send command for get modelname \n");
+		wret = g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Send_to_get_modelname],sizeof(AndroidCommand[Send_to_get_modelname]),NULL);
 	}
 	else if(!get_brightness_done && !get_model_name){
-		wret = g_UartExecutor.Write_ScalarTTyLocked(get_scalar_brightness,sizeof(get_scalar_brightness),NULL);
+		wret = g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Android_Get_Backlight_Level],sizeof(AndroidCommand[Android_Get_Backlight_Level]),NULL);
 		get_brightness_done = true;
 		if(scalerdebug)		
 		{			
-			for(inum=0;inum<sizeof(get_scalar_brightness);inum++)			
+			for(inum=0;inum<sizeof(AndroidCommand[Android_Get_Backlight_Level]);inum++)			
 			{					
-				printk("get_scalar_brightness data[%d]= 0x%x \n",inum,get_scalar_brightness[inum]);			
+				printk("szy get_scalar_brightness data[%d]= 0x%x \n",inum,*(brightness+inum));			
 			}		
 		}			
 	}
-	/*if(get_scalerversion_flag && get_brightness_done)	
-	{		
-		if(retry_flag<11)		
-		{			
-			retry_flag++;		
-		}		
-		if(retry_flag==10)		
-		{			
-			printk("get scaler version again size is %d , count retry time = %d \n",sizeof(_ScalerVerBuf),get_scalerversion_count);
-			wret = g_UartExecutor.Write_ScalarTTyLocked(send_to_get_scalarver,sizeof(send_to_get_scalarver),NULL);
-			get_scalerversion_count++;
-			if(get_scalerversion_count>2)
-			{				
-				get_scalerversion_flag=false;
-				get_scalerversion_count=0;				
-				printk("stop get scaler version \n");			
-			}			
-			retry_flag=0;		
-		}	
-	}*/
+	
 	if (set_auto_poweroff) 
 	{
-		auto_poweroff[8] = POWEROFF_MINUTE;
-		for(c = 0,check_sum = 0x00; c < (sizeof(auto_poweroff)-1); c ++){
-			check_sum = check_sum^auto_poweroff[c]; //xor
+		AndroidCommand[Auto_Poweroff].CmdData2= POWEROFF_MINUTE;
+		for(c = 0,check_sum = 0x00; c < (sizeof(AndroidCommand[Auto_Poweroff])-1); c ++){
+			check_sum = check_sum^(*(Auto_Pwoff+c)); //xor
 		}
-		auto_poweroff[c] = check_sum;
-		wret = g_UartExecutor.Write_ScalarTTyLocked(auto_poweroff,sizeof(auto_poweroff),NULL);
+		AndroidCommand[Auto_Poweroff].Checksum= check_sum;
+		wret = g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Auto_Poweroff],sizeof(AndroidCommand[Auto_Poweroff]),NULL);
 		set_auto_poweroff = false;
 	}
 
 
-
-/*
-	if(get_Mac_flag < 5){//((4 == get_Mac_flag)&&(BOOTING == R_state)){
-
-		if(0 == get_Mac_flag){
-			ret = g_UartExecutor.Write_ScalarTTyLocked(get_mac_add,sizeof(get_mac_add),NULL);
-			if(sizeof(get_mac_add) == ret){
-			printk("get_Mac_flag = 1\n");
-			}
-		}
-
-		if(3 == get_Mac_flag){
-			ret = g_UartExecutor.Write_ScalarTTyLocked(get_serial_num,sizeof(get_serial_num),NULL);
-			if(sizeof(get_serial_num) == ret){
-			printk("get_serial_num = 1\n");
-			}
-		}
-
-		get_Mac_flag += 1;
-	}
-*/
 }
 
 /*******************************************************************************
@@ -407,9 +277,8 @@ static ssize_t ScalarPolicy_write(struct file *fp, const char __user *data, size
   unsigned char buf[3] = {0};
   int wret;
   unsigned char c,check_sum;
-  unsigned char set_scalar_backlight_level[] = {MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,
-	        UART_WRITE,TPV_FACTORY_CODE,CMD_BYTE_0XDD,CMD_TYPE_0X85,0x01,backlight_level,0x00};
-  
+ unsigned char* Backlight = (unsigned char*)&AndroidCommand[Set_Backlight_Level];
+   AndroidCommand[Set_Backlight_Level].CmdData2 = backlight_level;
   //printk ("ScalarPolicy_write CMD = %d\n", buf[0]);
   
   if (copy_from_user(&buf, data, len)) {
@@ -436,19 +305,19 @@ static ssize_t ScalarPolicy_write(struct file *fp, const char __user *data, size
 		  	{	  	        
 		  	  set_brightness_count=0;	  	  
 			  backlight_level = buf[1];
-			  set_scalar_backlight_level[8] = backlight_level;
-			  set_scalar_backlight_level[7] = buf[2];
-			  for(c = 0,check_sum = 0x00; c < (sizeof(set_scalar_backlight_level)-1); c ++){
-				check_sum = check_sum^set_scalar_backlight_level[c];	//xor
+			  AndroidCommand[Set_Backlight_Level].CmdData2= backlight_level;
+			  AndroidCommand[Set_Backlight_Level].CmdData1= buf[2];
+			  for(c = 0,check_sum = 0x00; c < (sizeof(AndroidCommand[Set_Backlight_Level])-1); c ++){
+				check_sum = check_sum^(*(Backlight+c));	//xor
 			  }
-			  set_scalar_backlight_level[c] = check_sum;
-			  wret = g_UartExecutor.Write_ScalarTTyLocked(set_scalar_backlight_level,sizeof(set_scalar_backlight_level),NULL);
+			  AndroidCommand[Set_Backlight_Level].Checksum= check_sum;
+			  wret = g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Set_Backlight_Level],sizeof(AndroidCommand[Set_Backlight_Level]),NULL);
 			  scalar_feedback_brightness = false;
 			  if(scalerdebug)			 
 			  	{				  
-			  	for(inum=0;inum<sizeof(set_scalar_backlight_level);inum++)				 
+			  	for(inum=0;inum<sizeof(AndroidCommand[Set_Backlight_Level]);inum++)				 
 					{						
-					printk("set_scalar_backlight_level data[%d]= 0x%x \n",inum,set_scalar_backlight_level[inum]);
+					printk("szy set_scalar_backlight_level data[%d]= 0x%x \n",inum,*(Backlight+inum));
 					}			 
 				}	  	  
 			  }
@@ -490,43 +359,32 @@ static ssize_t ScalarPolicy_read(struct file *fp,  char __user *buf, size_t size
    return 0;
 }
 
-/*******************************************************************************
- **
- **
- **  
+/******************************************************************************* 
 ********************************************************************************/
 static long ScalarPolicy_ioctl(struct file *fp, unsigned int cmd, unsigned long arg)
 {
   int _get_cmd = cmd;
   int wret;
   unsigned char c,check_sum; 
-  unsigned char set_scalar_language[] = {MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,
-  						UART_WRITE,TPV_FACTORY_CODE,CMD_BYTE_0XDD,CMD_TYPE_0X83,0x01,gLanguage,0x00};
-//robert  
-unsigned char send_to_get_scalarver[]={MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,UART_READ,
-TPV_FACTORY_CODE,CMD_BYTE_0XDD,0x86,0x01,0x00,0x16};  unsigned char USB_State[2];
-unsigned char set_usb_hub_port[]={MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,
-	UART_WRITE,TPV_FACTORY_CODE,CMD_BYTE_0XDD,CMD_TYPE_0X84,USB_State[0],USB_State[1],0x00};
-  //unsigned char get_serial_num[] = {MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,UART_READ,
-//							  TPV_FACTORY_CODE,CMD_BYTE_0XDD,0x84,0x01,0x00,0x15};
-  unsigned char send_to_get_modelname[]={MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,UART_READ,
-  TPV_FACTORY_CODE,CMD_BYTE_0XDD,0x87,0x01,0x00,0x16};
-
+  unsigned char USB_State[2];
+  unsigned char* buf = (unsigned char*)&AndroidCommand[Set_USB_Hub_Power];
+  unsigned char* languagebuf = (unsigned char*)&AndroidCommand[Set_Language];
   printk ("ScalarPolicy_ioctl CMD = %x\n", _get_cmd);
 
   switch(_get_cmd){
-	 case SET_USB_HUB_PORT:	  printk("%s : SET_USB_HUB_PORT\n", __func__);
-	 if(copy_from_user(&USB_State, (char *)arg, sizeof(USB_State)))
-	 	{
-	 	return -1;	  
-		} 	  
-	 for(c = 0,check_sum = 0x00; c < (sizeof(set_usb_hub_port)-1); c ++)
-	 	{			
-	 	check_sum = check_sum^set_usb_hub_port[c];		//xor	 
-	 	} 	  
-	 set_usb_hub_port[c]= check_sum;
-	 wret = g_UartExecutor.Write_ScalarTTyLocked(set_usb_hub_port,sizeof(set_usb_hub_port),NULL);
-	 break;
+	 case SET_USB_HUB_PORT:	 
+		 	printk("%s : SET_USB_HUB_PORT\n", __func__);
+		 if(copy_from_user(&USB_State, (char *)arg, sizeof(USB_State)))
+		 	{
+		 	return -1;	  
+			} 	  
+		 for(c = 0,check_sum = 0x00; c < (sizeof(AndroidCommand[Set_USB_Hub_Power])-1); c ++)		 	
+		 	{					 	
+		 		check_sum = check_sum^(*(buf+c));		//xor	 		 	
+		 	} 	  		 
+		  AndroidCommand[Set_USB_Hub_Power].Checksum= check_sum;
+		 wret = g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Set_USB_Hub_Power],sizeof(AndroidCommand[Set_USB_Hub_Power]),NULL);
+	break;
 
 	case GET_ANDROID_SERIAL_NUMBER:
 		if(true)		
@@ -551,7 +409,7 @@ unsigned char set_usb_hub_port[]={MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,
 		get_brightness_done = false;
 		printk("%s : GET_SCALAR_BRIGHTNESS\n", __func__);
 		if(scalerdebug)
-			printk("GET_SCALAR_BRIGHTNESS value= %x \n", backlight_level);
+			printk("szy GET_SCALAR_BRIGHTNESS value= %x \n", backlight_level);
 		if(copy_to_user((char *)arg, &backlight_level, sizeof(backlight_level))) {
 			return -1;
 		}
@@ -561,29 +419,29 @@ unsigned char set_usb_hub_port[]={MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,
 		if(copy_from_user(&gLanguage, (char *)arg, sizeof(gLanguage))) {
 			return -1;
 		}
-		set_scalar_language[8] = gLanguage;
-		for(c = 0,check_sum = 0x00; c < (sizeof(set_scalar_language)-1); c ++){
-		  check_sum = check_sum^set_scalar_language[c];	  //xor
+		AndroidCommand[Set_Language].CmdData2= gLanguage;
+		for(c = 0,check_sum = 0x00; c < (sizeof(AndroidCommand[Set_Language])-1); c ++){
+		  check_sum = check_sum^(*(languagebuf+c));		//xor
 		}
-		set_scalar_language[c] = check_sum;			
-		wret = g_UartExecutor.Write_ScalarTTyLocked(set_scalar_language,sizeof(set_scalar_language),NULL);
+		AndroidCommand[Set_Language].Checksum = check_sum;			
+		wret = g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Set_Language],sizeof(AndroidCommand[Set_Language]),NULL);
 		if(scalerdebug)
 			{
-			for(inum=0;inum<sizeof(set_scalar_language);inum++)	
+			for(inum=0;inum<sizeof(AndroidCommand[Set_Language]);inum++)	
 				{					
-				printk("set_scalar_language language data[%d]= 0x%x \n",inum,set_scalar_language[inum]);
+				printk("set_scalar_language language data[%d]= 0x%x \n",inum,*(languagebuf+inum));
 				}	
 			}
 	break;
     case SET_SCALAR_LANGUAGE_SYNC:
-		if(copy_from_user(&gLanguage, (char *)arg, sizeof(gLanguage))) {
+		if(copy_from_user(&gLanguage, (char *)arg, sizeof(gLanguage))){ 
 			return -1;
 		}
 
     break;
     case SENDMSG_TO_GET_SCALERVER:
 		printk("%s : SENDMSG_TO_GET_SCALERVER\n", __func__);
-		wret = g_UartExecutor.Write_ScalarTTyLocked(send_to_get_scalarver,sizeof(send_to_get_scalarver),NULL);
+		wret = g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Send_to_get_scalarver],sizeof(AndroidCommand[Send_to_get_scalarver]),NULL);
 		get_scalerversion_flag=true;
     break;
     case GET_SCALAR_VERSION:
@@ -608,7 +466,7 @@ unsigned char set_usb_hub_port[]={MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,
     break;
     case SENDMSG_TO_GET_MODELNAME:
 		printk("%s : SENDMSG_TO_GET_MODELNAME\n", __func__);
-		wret = g_UartExecutor.Write_ScalarTTyLocked(send_to_get_modelname,sizeof(send_to_get_modelname),NULL);
+		wret = g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Send_to_get_modelname],sizeof(AndroidCommand[Send_to_get_modelname]),NULL);
 		
     break;
     case GET_MODELNAME:
@@ -720,24 +578,7 @@ static int __devinit scalarpolicy_probe(struct platform_device *pdev)
     wake_lock_destroy(&spi->wake_lock);  //bob+
     return -EIO;
   }
-/*
-  scalar_early_suspender.suspend = scalar_early_suspend;
-  scalar_early_suspender.resume = scalar_late_resume;
-  register_early_suspend(&scalar_early_suspender);
-*/
-  /*
-  recovery_mode = gpio_get_value(TEGRA_GPIO_PX5);
-	
-  ret = request_irq(TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_PX4), Scalar_key2_interrupt_handler, IRQF_TRIGGER_FALLING|IRQF_TRIGGER_RISING,"Scalar_Policy", NULL);  
-  if (ret < 0) {
-  	printk("scalar: request irq TEGRA_GPIO_PX4 failed\n");
-  }
-  
-  ret = request_irq(TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_PX5), Scalar_key1_interrupt_handler, IRQF_TRIGGER_FALLING|IRQF_TRIGGER_RISING,"Scalar_Policy", NULL);  
-  if (ret < 0) {
-  	printk("scalar: request irq TEGRA_GPIO_PX5 failed\n");
-  }
-*/
+
 	wake_lock(&spi->wake_lock);  //bob+
 
   return 0;

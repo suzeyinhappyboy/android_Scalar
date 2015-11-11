@@ -49,7 +49,7 @@ int temp=0;
 
 bool getethmac=true;
 bool getsn=true;
-bool scalerdebug=false; //add debug
+bool scalerdebug=true; //add debug
 bool get_model_name=true;
 
 //use for report poweroff state 
@@ -130,48 +130,11 @@ static unsigned char TPVComm_AckMsgVerify(unsigned char *cBuff){
 	if((cBuff[0] + cBuff[1]) == 0xff)
 	{
 		cRetVal = (unsigned char)eLink_OK;
-		/*
-		if((cLinkId & 0xc0) == 0xc0) // check if AckType3 message
-		{
-			if(UartAck_Ok_ChkTbl[cIndex])
-			cRetVal = (unsigned char)eLink_OK;
-		}
-		else if((cLinkId & 0xc0) == 0x80) // check if AckType2 message
-		{
-			if(UartAck_NotSupport_ChkTbl[cIndex])
-			cRetVal = (unsigned char)eLink_NOT_SUPPORTED;
-		}             */
 	}
 	
 	return(cRetVal); // 0:NG, 1:OK, 2:Not supported,
 }
-/*
-static unsigned char stch_i(char *s)
-{
-	unsigned int val;
-	unsigned int r;
-	
-	r = 0;
-	while (*s) {
-		if(isxdigit(*s)) 
-		{
-			if(isdigit(*s)) 
-				val = *s - '0';
-			else{
-				*s = toupper(*s);
-				val = *s - 'A' + 10;
-				}
 
-			r = r * 16 + val;
-			s++;
-		}
-		else 
-			break;
-	}
-	
-	return((unsigned char)r);
-}
-*/
 
 //modify send ACK function @haishan.lin 2013.05.03
 static int  Send_Ack1Ack2(char len, char cmd_type, char cmd_data1,char cmd_data2, char value, char is_sptby_TV){
