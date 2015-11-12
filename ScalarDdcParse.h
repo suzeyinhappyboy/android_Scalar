@@ -1,4 +1,4 @@
-/*******************************************************************************/
+ /*******************************************************************************/
 #ifndef _DDC_PARSE_H_
 #define _DDC_PARSE_H_
 
@@ -15,7 +15,7 @@
 #define TPV_FACTORY_CODE	0xF5
 
 #define NORM_SHUTDOWN		0x81
-#define	SUSPEND				0x82
+#define	SUSPEND			0x82
 #define FORCE_SHUTDOWN		0x83
 #define TURN_ON_BACKLIGHT	0x03
 #define RESET_SLEEP_TIMER	0x04
@@ -137,6 +137,46 @@ typedef struct Ack_Return {
 	char Data_len;
 	char Data;
 }Ack_RetFormat,ptr_Ack_RetFormat;
+ 
+  typedef struct Command{
+		  unsigned char Header1Byte;
+		  unsigned char Header2Byte;
+		  unsigned char PacketSize;
+		  unsigned char Pre1byte;
+		  unsigned char Pre2byte;
+		  unsigned char CmdDirection;
+		  unsigned char CmdType;
+		  unsigned char CmdData1;
+		  unsigned char CmdData2;
+		  unsigned char Checksum;
+  }Cmd_List; 
+   
+  enum Scalar_to_Android{
+	  Change_State,
+	  Change_Source,
+	  Update_Backlight_Level,
+	  Update_Headphone_State,
+	  Rotate_Display,
+	  Get_Android_State
+  };
+  
+  enum Android_to_Scalar{
+	  Android_Feedback_State,
+	  Blink_Power_LED,
+	  Set_Language,
+	  Set_USB_Hub_Power,
+	  Set_Backlight_Level,
+	  Auto_Poweroff,
+  
+	  Get_Scaler_Source_State,
+	  Android_Get_USB_Hub_State,
+	  Android_Get_Backlight_Level,
+	  Read_EDID_Serial_Number,
+	  Get_MAC_address,
+	  Send_to_get_scalarver,
+	  Send_to_get_modelname
+  };
+
 
 typedef struct ScalarDdcParse_T
 {

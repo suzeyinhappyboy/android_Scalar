@@ -238,7 +238,7 @@ enum
 //---------------------------------------------------------------------------
 #define PRE1_R                  0x01
 #define PRE1_W                  0x03
-#define PRE2                    0xFE    // TPV factory code
+#define PRE2                        0xFE    // TPV factory code
 #define FCODE01                 0xE1
 #define FCODE02                 0xE2
 #define FCODE03                 0xE3

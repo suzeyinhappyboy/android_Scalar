@@ -14,7 +14,7 @@
 #include "ScalarDdcParse.h"
 #include "UartExecutor.h"
 #include "PowerStateExecutor.h"
-#include "ScalarPolicy.h"
+//#include "ScalarPolicy.h"
 
 #include "env_resolve.h"
 
@@ -52,6 +52,9 @@ bool getethmac=true;
 bool getsn=true;
 bool scalerdebug=true; //add debug
 bool get_model_name=true;
+extern  Cmd_List  AndroidCommand[13];
+extern  Cmd_List ScalarCommand[6];
+
 
 //use for report poweroff state 
 static struct timer_list poweroff_timer;
@@ -398,22 +401,15 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 	char data_length = dat_len;
 	char CurDatPtr,Pkt_len,Ack_data_len,Command_type,Command_data2;
 	char Check_sum,State,Cnt;
-    unsigned char set_scalar_language[] = {MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,
-                          UART_WRITE,TPV_FACTORY_CODE,CMD_BYTE_0XDD,CMD_TYPE_0X83,0x01,gLanguage,0x00};
-    //Read EDID Serial Number   (direct mode) (Read Osd EDID Serial Number)
-    unsigned char get_serial_num[] = {MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,UART_READ,
-                            TPV_FACTORY_CODE,CMD_BYTE_0XDD,0x84,0x01,0x00,0x15};
 	unsigned char cRetVal;
-	unsigned char send_to_get_ethmac[]={MONITOR_SLAVE_ADD,SOURCE_ADD,0x86,
-		UART_READ,TPV_FACTORY_CODE,CMD_BYTE_0XDD,0x85,0x01,0x00,0x14};  
-
 	ptr_DDC_Command *ddc_cmd_buf;
-
+	
 	CurDatPtr = 0;		//clear
 	while((CurDatPtr < data_length) && ((data_length-CurDatPtr) >= MIN_ACK_LEN)){
 		//check MONITOR_SLAVE_ADD & SOURCE_ADD
 		if((MONITOR_SLAVE_ADD == *(ddc_buf+CurDatPtr)) 
-					&& (SOURCE_ADD == *(ddc_buf+(CurDatPtr+1)))){
+					&& (SOURCE_ADD == *(ddc_buf+(CurDatPtr+1))))
+		{
 			
 			Check_sum = MONITOR_SLAVE_ADD^SOURCE_ADD;
 			//get the wright cmd head
@@ -452,8 +448,8 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
                 		Parse_Specific_Command(dev, ddc_cmd_buf);	    
 			}
 			
-			}
-			else{
+		     }
+		     else{
 				//maybe Ack
 				//ack_buffer[0] = stch_i(ddc_buf[CurDatPtr]);
 				//ack_buffer[1] = stch_i(ddc_buf[CurDatPtr+1]);
@@ -463,7 +459,8 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
                           cRetVal = TPVComm_AckMsgVerify((ddc_buf+CurDatPtr));
 
 				printk("szy TPVComm_AckMsgVerify cRetVal=%d\n",cRetVal);
-				if((unsigned char)eLink_OK == cRetVal){
+				if((unsigned char)eLink_OK == cRetVal)
+				{
 					CurDatPtr += 2;		//move the point to Pktlen
 					Command_type = *(ddc_buf+CurDatPtr);
 					CurDatPtr += 2;
@@ -472,33 +469,37 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 					Ack_data_len = *(ddc_buf+CurDatPtr);
 					if(0x00 == Ack_data_len){
 						switch(Command_type){
-							case CMD_TYPE_0X81:
-								scalar_feedback_state = Command_data2;
-                                if(BOOTING == scalar_feedback_state)
-                                	{
-	                                	//printk("send command for get_serial_num \n");
-	                                  //g_UartExecutor.Write_ScalarTTyLocked(get_serial_num,sizeof(get_serial_num),NULL);  
-						printk("get Mac address \n");			  
-					       g_UartExecutor.Write_ScalarTTyLocked(send_to_get_ethmac,sizeof(send_to_get_ethmac),NULL);	
-	                           }
-					else if(POWER_ON_READY == scalar_feedback_state)
-                                    g_UartExecutor.Write_ScalarTTyLocked(set_scalar_language,sizeof(set_scalar_language),NULL);
-								break;
-							case CMD_TYPE_0X82:
-								break;
-							case CMD_TYPE_0X83:
-								break;
-							case CMD_TYPE_0X84:
-								break;
-							case CMD_TYPE_0X85:
+						case CMD_TYPE_0X81:
+							 scalar_feedback_state = Command_data2;
+			                                if(BOOTING == scalar_feedback_state)
+			                                {
+				                                	//printk("send command for get_serial_num \n");
+				                                  //g_UartExecutor.Write_ScalarTTyLocked(get_serial_num,sizeof(get_serial_num),NULL);  
+									printk("get Mac address \n");			  
+								       g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Get_MAC_address],sizeof(AndroidCommand[Get_MAC_address]),NULL);	
+				                         }
+							else if(POWER_ON_READY == scalar_feedback_state)
+							{
+                                   			 	     g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Set_Language],sizeof(AndroidCommand[Set_Language]),NULL);
+							}
+						break;
+						case CMD_TYPE_0X82:
+							break;
+						case CMD_TYPE_0X83:
+							break;
+						case CMD_TYPE_0X84:
+							break;
+						case CMD_TYPE_0X85:
 								scalar_feedback_brightness = true;
 								set_brightness_count= 0;
 								printk("szy scalar feedback backlight level %d\n",Command_data2);
-								break;
-							default:
-								break;
+						break;
+						default:
+							break;
 						}
-					}else if(0x01 == Ack_data_len){
+					}
+					else if(0x01 == Ack_data_len)
+					{
 
 						switch (Command_type){
 							case CMD_TYPE_0X81:
@@ -531,7 +532,9 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 								break;
 						}
 
-					}else if(0x0e== Ack_data_len){
+					}
+					else if(0x0e== Ack_data_len)
+					{
 						CurDatPtr += 1; //move the point to Ack data
 						printk("szy Maybe SN!\n");
 						getsn=false;
@@ -604,13 +607,14 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 						CurDatPtr += Ack_data_len;	//move the point to the next cmd
 					}
 				
-				}else if(cRetVal == (unsigned char)eLink_NOT_SUPPORTED){
+				}
+				else if(cRetVal == (unsigned char)eLink_NOT_SUPPORTED){
 
-				CurDatPtr += 1;
-			}
-			else{
-				CurDatPtr += 1;
-			}		
+					CurDatPtr += 1;
+				}
+				else{
+					CurDatPtr += 1;
+				}		
 		}
 	}
 
