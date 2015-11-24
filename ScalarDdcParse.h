@@ -93,8 +93,8 @@ typedef enum {
 #define SENDMSG_TO_GET_MODELNAME	0x80	
 #define GET_MODELNAME					0x81
 
-#define CMD_BYTE_0XDC		0xDC
-#define CMD_BYTE_0XDD		0xDD
+#define Scalar_to_Android		0xDC
+#define Android_to_Scalar		0xDD
 #define CMD_TYPE_0X81		0x81
 #define CMD_TYPE_0X82		0x82
 #define CMD_TYPE_0X83		0x83

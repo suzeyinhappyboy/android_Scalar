@@ -3,3 +3,10 @@ ScalarPolicy.h:37
 		unsigned char PacketSize;
 		unsigned char Pre1byte;
 		unsigned char Pre2byte;
+---- Parse_DDC_Packet Matches (7 in 3 files) ----
+ScalarDdcParse.c:static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char dat_len);
+ScalarDdcParse.c:  .Parse_DDC_Packet = Parse_DDC_Packet,
+ScalarDdcParse.c:     Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char dat_len);
+ScalarDdcParse.c:static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char dat_len)
+ScalarDdcParse.h:	char (*Parse_DDC_Packet)(struct input_polled_dev *dev, char *ddc_buf, char dat_len);
+ScalarPolicy.c:  		g_ScalarDdcParse.Parse_DDC_Packet(dev,local_buf,rret);

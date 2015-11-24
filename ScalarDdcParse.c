@@ -81,6 +81,13 @@ extern const UartExecutor g_UartExecutor;
 //use to contrl power state
 extern const PowerStateExecutor g_PowerStateExecutor;
 
+void dccEnterDCC(void)
+{
+    DBG_AFM(printf("Goto AFM mode\n"));/*Creass.liu at 2012-06-26*/
+     Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char dat_len);
+}
+
+
 //ACK1, ACK2
 static void TPVComm_TwoAckByteOkMsgGet(unsigned char *pBuff)
 {
@@ -107,7 +114,7 @@ static void TPVComm_TwoAckByteNotSupportMsgGet(unsigned char *pBuff)
 typedef enum { eLink_NG=0, eLink_OK, eLink_NOT_SUPPORTED } tagLINKSTAT;
 
 // AckType check table
-//
+//x
 const unsigned char UartAck_Ok_ChkTbl[64] = { // for AckType3 check table
 	0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, // 0xc0
 	0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, // 0xd0
@@ -237,7 +244,8 @@ void Parse_Specific_Command(struct input_polled_dev *dev, ptr_DDC_Command *comma
 	
 	switch(command_buf->CmdDirect)
     {
-		case CMD_BYTE_0XDC:
+		case Scalar_to_Android:
+			
 			if(CMD_TYPE_0X81 == command_buf->CMD_Type){	
 				if(UART_WRITE == command_buf->Pre1Byte){
 					reAck_len = 6;
@@ -383,7 +391,7 @@ void Parse_Specific_Command(struct input_polled_dev *dev, ptr_DDC_Command *comma
 			}			
 			break;
 
-		case CMD_BYTE_0XDD:
+		case Android_to_Scalar:
 
 		break;
 
@@ -416,9 +424,9 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 			CurDatPtr += 2;		//move point to the Pktlen byte NO.3
 
 			//package length
-			Pkt_len = *(ddc_buf+CurDatPtr)&0x7f;
+			Pkt_len = *(ddc_buf+CurDatPtr)&0x7f;  //1000 0110 & 0111 1111
 
-			if((data_length-CurDatPtr) < (Pkt_len+1)){
+			if((data_length-CurDatPtr) < (Pkt_len+1)){	// >?
 				CurDatPtr += 1;
 				continue;
 			}
@@ -433,7 +441,7 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 				CurDatPtr += (Pkt_len+2);	//move point to after the Check byte NO.11,next cmd
 				//send erro Ack1Ack2?
 				//Send_Ack1Ack2(3,0,IS_SUPPORT_BY_TV_SET);
-
+				printk("szy check sum erro!!\n");
 				continue;
 			}
 
@@ -445,7 +453,8 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 
 			if((CMD_PKT_SIZE == (ddc_cmd_buf->PktLen&0x7f)) 
 					&& (TPV_FACTORY_CODE == ddc_cmd_buf->Pre2Byte)) {
-                		Parse_Specific_Command(dev, ddc_cmd_buf);	    
+                		Parse_Specific_Command(dev, ddc_cmd_buf);
+				printk("szy really Ack\n");
 			}
 			
 		     }
@@ -599,7 +608,7 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 						}
 						if(true)
 						{
-							for(i=0;i<sizeof(_ModelNameBuf);i++)
+							for(i=0;i<sizeof(_ModelNameBuf);i++)  
 							{	
 								printk("szy Model name data[%d]= 0x%x \n",i,_ModelNameBuf[i]);
 							}

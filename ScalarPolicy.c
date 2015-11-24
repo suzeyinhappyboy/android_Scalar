@@ -233,8 +233,6 @@ static void ScalarPolicy_poll(struct input_polled_dev *dev)
 		old_R_state = R_state; 
 		resend_flag = 0;
 
-		//set pkt_nbr
-		//fb_pm_stat[GEN_PKT_LENGTH] = SetPktNbr(R_state);
 		AndroidCommand[Android_Feedback_State].CmdData2 = R_state;
 		for(c = 0,check_sum = 0x00; c < (sizeof(AndroidCommand[Android_Feedback_State])-1); c ++){
 			check_sum = check_sum^(*(fb_state+c));	//xor
@@ -251,7 +249,6 @@ static void ScalarPolicy_poll(struct input_polled_dev *dev)
 			resend_flag++;	//UART_ACK_TIME = 2s,poll_interval = 200ms,so UART_ACK_TIME = poll_interval * 10;
 		}
 		if((scalar_feedback_state != old_R_state) && (resend_flag == 10)){		
-//			fb_pm_stat[GEN_PKT_LENGTH] = SetPktNbr(old_R_state);
 		
 			//check sum
 			printk ("szy ScalarPolicy_poll -- scalar_feedback_state != old_R_state\n");
