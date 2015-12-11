@@ -33,6 +33,7 @@ static unsigned char local_buf[256];
  static int ScalarPolicy_release(struct inode *, struct file *);
  static ssize_t ScalarPolicy_write(struct file *fp, const char __user *data, size_t len, loff_t *ppos);
  static int __devinit scalarpolicy_probe(struct platform_device *pdev);
+ static void R_state();
 
 static const struct file_operations scalarexector_fops = {
 	.owner = THIS_MODULE,
@@ -226,41 +227,7 @@ static void ScalarPolicy_poll(struct input_polled_dev *dev)
 	memset(local_buf, 0 , sizeof(local_buf));
   	rret = g_UartExecutor.Read_ScalarTTyLocked (local_buf, len, NULL);
 	
-//*  //Eric	
-	if(old_R_state != R_state){
-		
-		printk ("szy ScalarPolicy_poll -- old_R_state != R_state\n");
-		old_R_state = R_state; 
-		resend_flag = 0;
-
-		AndroidCommand[Android_Feedback_State].CmdData2 = R_state;
-		for(c = 0,check_sum = 0x00; c < (sizeof(AndroidCommand[Android_Feedback_State])-1); c ++){
-			check_sum = check_sum^(*(fb_state+c));	//xor
-		}
-		AndroidCommand[Android_Feedback_State].Checksum= check_sum;
-		wret = g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Android_Feedback_State],sizeof(AndroidCommand[Android_Feedback_State]),NULL);
-		if(CANCEL_SHUTDOWN == R_state){
-			R_state = POWER_ON_READY;
-		}
-		
-	}else if(old_R_state == R_state){    
-		if(resend_flag < 11) {
-			
-			resend_flag++;	//UART_ACK_TIME = 2s,poll_interval = 200ms,so UART_ACK_TIME = poll_interval * 10;
-		}
-		if((scalar_feedback_state != old_R_state) && (resend_flag == 10)){		
-		
-			//check sum
-			printk ("szy ScalarPolicy_poll -- scalar_feedback_state != old_R_state\n");
-			AndroidCommand[Android_Feedback_State].CmdData2 = R_state;
-			for(c = 0,check_sum = 0x00; c < (sizeof(AndroidCommand[Android_Feedback_State])-1); c ++){
-			check_sum = check_sum^(*(fb_state+c));	//xor
-			}
-			AndroidCommand[Android_Feedback_State].Checksum= check_sum;
-			wret = g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Android_Feedback_State],sizeof(AndroidCommand[Android_Feedback_State]),NULL);
-		}
-	}
-//*/
+	 R_state();
 	if(rret > 0){
   		g_ScalarDdcParse.Parse_DDC_Packet(dev,local_buf,rret);
 	}
@@ -306,6 +273,46 @@ static void ScalarPolicy_poll(struct input_polled_dev *dev)
 
 
 }
+
+static void R_state()
+{
+	//*  //Eric	
+	if(old_R_state != R_state){
+		
+		printk ("szy ScalarPolicy_poll -- old_R_state != R_state\n");
+		old_R_state = R_state; 
+		resend_flag = 0;
+
+		AndroidCommand[Android_Feedback_State].CmdData2 = R_state;
+		for(c = 0,check_sum = 0x00; c < (sizeof(AndroidCommand[Android_Feedback_State])-1); c ++){
+			check_sum = check_sum^(*(fb_state+c));	//xor
+		}
+		AndroidCommand[Android_Feedback_State].Checksum= check_sum;
+		wret = g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Android_Feedback_State],sizeof(AndroidCommand[Android_Feedback_State]),NULL);
+		if(CANCEL_SHUTDOWN == R_state){
+			R_state = POWER_ON_READY;
+		}
+		
+	}else if(old_R_state == R_state){    
+		if(resend_flag < 11) {
+			
+			resend_flag++;	//UART_ACK_TIME = 2s,poll_interval = 200ms,so UART_ACK_TIME = poll_interval * 10;
+		}
+		if((scalar_feedback_state != old_R_state) && (resend_flag == 10)){		
+		
+			//check sum
+			printk ("szy ScalarPolicy_poll -- scalar_feedback_state != old_R_state\n");
+			AndroidCommand[Android_Feedback_State].CmdData2 = R_state;
+			for(c = 0,check_sum = 0x00; c < (sizeof(AndroidCommand[Android_Feedback_State])-1); c ++){
+			check_sum = check_sum^(*(fb_state+c));	//xor
+			}
+			AndroidCommand[Android_Feedback_State].Checksum= check_sum;
+			wret = g_UartExecutor.Write_ScalarTTyLocked((unsigned char*)&AndroidCommand[Android_Feedback_State],sizeof(AndroidCommand[Android_Feedback_State]),NULL);
+		}
+	}
+//*/
+}
+
 
 /*******************************************************************************
  **

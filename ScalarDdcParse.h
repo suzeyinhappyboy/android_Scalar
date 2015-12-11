@@ -115,21 +115,20 @@ typedef enum {
 
 #define IS_SUPPORT_BY_TV_SET	0x01
 #define NOT_SUPPORT_BY_TV_SET	0x00
-
+/*
 typedef struct DDC_Command_T {
-	//char Mnt_SlvAdd;	/* Monitor slave address (write) */
-	//char SRC_Add;		/* Source address */
 	
-	char PktLen;		/* Packet Length (bit 7 always set to 1) */
-	char Pre1Byte;		/* Write = 0x03 (Set VCP, Uart Write),Read = 0x01 (Get VCP, Uart Read). */
-  	char Pre2Byte;		/* 0xFE, TPV factory code*/
+	
+	char PktLen;		
+	char Pre1Byte;		
+  	char Pre2Byte;		
   	char CmdDirect;		
   	char CMD_Type;
 
   	char CMD_Data1;
 	char CMD_Data2;
 }DDC_Command,ptr_DDC_Command;
-
+*/
 typedef struct Ack_Return {
 	char Ack1;
 	char Ack2;
@@ -137,19 +136,21 @@ typedef struct Ack_Return {
 	char Data_len;
 	char Data;
 }Ack_RetFormat,ptr_Ack_RetFormat;
- 
-  typedef struct Command{
+
+ //char Mnt_SlvAdd;	/* Monitor slave address (write) */
+	//char SRC_Add;		/* Source address */
+  typedef struct DDC_Command_T{
 		  unsigned char Header1Byte;
 		  unsigned char Header2Byte;
-		  unsigned char PacketSize;
-		  unsigned char Pre1byte;
-		  unsigned char Pre2byte;
+		  unsigned char PacketSize;	/* Packet Length (bit 7 always set to 1) */
+		  unsigned char Pre1byte;	/* Write = 0x03 (Set VCP, Uart Write),Read = 0x01 (Get VCP, Uart Read). */
+		  unsigned char Pre2byte; 	/* 0xF5, TPV factory code*/
 		  unsigned char CmdDirection;
 		  unsigned char CmdType;
 		  unsigned char CmdData1;
 		  unsigned char CmdData2;
 		  unsigned char Checksum;
-  }Cmd_List; 
+  }Cmd_List,DDC_Command,ptr_DDC_Command; 
    
   enum Scalar_to_Android{
 	  Change_State,

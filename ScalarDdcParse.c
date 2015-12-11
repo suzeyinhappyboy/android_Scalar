@@ -451,8 +451,8 @@ static char Parse_DDC_Packet(struct input_polled_dev *dev, char *ddc_buf, char d
 			ddc_cmd_buf = (ptr_DDC_Command *)(ddc_buf+CurDatPtr);
 			CurDatPtr += (Pkt_len+2);	//move point to after the Check byte NO.11,next cmd
 
-			if((CMD_PKT_SIZE == (ddc_cmd_buf->PktLen&0x7f)) 
-					&& (TPV_FACTORY_CODE == ddc_cmd_buf->Pre2Byte)) {
+			if((CMD_PKT_SIZE == (ddc_cmd_buf->PacketSize & 0x7f)) 
+					&& (TPV_FACTORY_CODE == ddc_cmd_buf->Pre2byte)) {
                 		Parse_Specific_Command(dev, ddc_cmd_buf);
 				printk("szy really Ack\n");
 			}
